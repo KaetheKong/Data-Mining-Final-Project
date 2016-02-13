@@ -1,0 +1,41 @@
+import pandas as pd
+gold = pd.read_csv('gold.csv')
+cpi = pd.read_csv('CPI.csv')
+gold = gold.drop(['1960','2015','Series Code','Country Name','Country Code'], axis = 1)
+cpi = cpi.drop(['1960','2015','Series Code','Country Name','Country Code'], axis = 1)
+import numpy as np
+with_gold = gold.loc[0]
+without_gold = gold.loc[1]
+cpi = cpi.loc[0]
+m_with_gold = np.matrix(with_gold)
+m_without_gold = np.matrix(without_gold)
+m_without_gold[0] = m_without_gold[0].astype(np.float)
+m_with_gold[0] = m_with_gold[0].astype(np.float)
+gold = np.subtract(m_with_gold,m_without_gold )
+gold = gold[0].tolist()
+gold = gold[0]
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.style.use('ggplot')
+%matplotlib inline
+result = pd.DataFrame()
+result['Inflation'] = cpi
+result['gold'] = gold
+goldDF = pd.DataFrame()
+inflation = pd.DataFrame()
+goldDF['gold'] = gold
+inflation['Inflation'] = cpi
+n = result['Inflation'].size
+result['Normalized Gold Reserve'] = (result['gold'] - result['gold'].mean())/(result['gold'].std()/np.sqrt(n))
+result['Normalized Inflation'] = (result['Inflation'] - result['Inflation'].mean())/(result['Inflation'].std()/np.sqrt(n))
+result.plot.scatter(x = ['Normalized Gold Reserve'],y = ['Normalized Inflation'],figsize=(5, 5))
+result['Normalized Gold Reserve'].corr(result['Normalized Inflation'])
+result.plot(y = ['Normalized Gold Reserve','Normalized Inflation'],figsize=(10, 5))
+rolling_corr_result = pd.rolling_corr(result['Normalized Gold Reserve'],result['Normalized Inflation'], 10)
+rolling_corr_result.plot.line(figsize=(10, 5))
+import statsmodels.formula.api as smf
+Y = result['Normalized Gold Reserve']
+X = result['Normalized Inflation']
+results = smf.OLS(Y, X).fit()
+results.summary()
+
